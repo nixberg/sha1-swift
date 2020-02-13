@@ -100,15 +100,19 @@ public struct SHA1 {
         
         if index >= 56 {
             self.compress()
-            buffer.resetBytes(in: 0..<64)
+            buffer.resetBytes(in: 0..<56)
         }
         
-        for (i, byte) in (8 * length).bigEndianBytes.enumerated() {
+        for (i, byte) in UInt64(8 * length).bigEndianBytes.enumerated() {
             buffer[56 + i] = byte
         }
         self.compress()
         
-        output.append(contentsOf: state)
+        output.append(contentsOf: state.0.bigEndianBytes)
+        output.append(contentsOf: state.1.bigEndianBytes)
+        output.append(contentsOf: state.2.bigEndianBytes)
+        output.append(contentsOf: state.3.bigEndianBytes)
+        output.append(contentsOf: state.4.bigEndianBytes)
     }
     
     public mutating func finalize() -> [UInt8] {
@@ -121,47 +125,30 @@ public struct SHA1 {
 
 public extension SHA1 {
     static func hash<D, M>(_ input: D, into output: inout M) where D: DataProtocol, M: MutableDataProtocol {
-        var sha1 = SHA1()
-        sha1.update(with: input)
-        sha1.finalize(into: &output)
+        var hashFunction = Self()
+        hashFunction.update(with: input)
+        hashFunction.finalize(into: &output)
     }
     
     static func hash<D>(_ input: D) -> [UInt8] where D: DataProtocol {
-        var sha1 = SHA1()
-        sha1.update(with: input)
-        return sha1.finalize()
+        var hashFunction = Self()
+        hashFunction.update(with: input)
+        return hashFunction.finalize()
     }
 }
 
-fileprivate extension UInt32 {
+fileprivate extension FixedWidthInteger where Self: UnsignedInteger {
     init<D>(bigEndianBytes bytes: D) where D: DataProtocol {
-        assert(bytes.count == 4)
+        assert(bytes.count == Self.bitWidth / 8)
         self = bytes.reduce(0, { $0 &<< 8 | Self($1) })
     }
     
     var bigEndianBytes: [UInt8] {
-        (0..<4).reversed().map { UInt8(truncatingIfNeeded: self &>> ($0 * 8)) }
+        stride(from: 0, to: Self.bitWidth, by: 8).reversed().map { UInt8(truncatingIfNeeded: self &>> $0) }
     }
     
     @inline(__always)
     func rotatedLeft(by n: Int) -> Self {
-        (self &<< n) | (self &>> (32 - n))
-    }
-}
-
-fileprivate extension Int {
-    var bigEndianBytes: [UInt8] {
-        let bitPattern = UInt64(bitPattern: Int64(self))
-        return (0..<8).reversed().map { UInt8(truncatingIfNeeded: bitPattern &>> ($0 * 8)) }
-    }
-}
-
-fileprivate extension MutableDataProtocol {
-    mutating func append(contentsOf state: (UInt32, UInt32, UInt32, UInt32, UInt32)) {
-        self.append(contentsOf: state.0.bigEndianBytes)
-        self.append(contentsOf: state.1.bigEndianBytes)
-        self.append(contentsOf: state.2.bigEndianBytes)
-        self.append(contentsOf: state.3.bigEndianBytes)
-        self.append(contentsOf: state.4.bigEndianBytes)
+        (self &<< n) | (self &>> (Self.bitWidth - n))
     }
 }
