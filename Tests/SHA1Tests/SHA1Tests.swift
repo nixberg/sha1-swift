@@ -13,18 +13,24 @@ final class SHA1Tests: XCTestCase {
     }
     
     @available(OSX 10.15, *)
-    func testShortInputs() {
-        (0..<64).forEach {
+    func testRandomInputs() {
+        (1..<512).forEach {
             let input = [UInt8].random(count: $0)
             XCTAssert(Insecure.SHA1.hash(data: input).elementsEqual(SHA1.hash(input)))
         }
     }
     
     @available(OSX 10.15, *)
-    func testLongInputs() {
-        (64..<512).forEach {
-            let input = [UInt8].random(count: $0)
-            XCTAssert(Insecure.SHA1.hash(data: input).elementsEqual(SHA1.hash(input)))
+    func testMultipleInputs() {
+        (2..<32).forEach {
+            var sha1 = SHA1()
+            let inputs = (0..<$0).map { _ in
+                [UInt8].random(count: .random(in: 0..<128))
+            }
+            inputs.forEach {
+                sha1.update(with: $0)
+            }
+            XCTAssert(Insecure.SHA1.hash(data: ArraySlice(inputs.joined())).elementsEqual(sha1.finalize()))
         }
     }
 }
