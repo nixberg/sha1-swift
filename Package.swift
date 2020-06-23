@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "SHA1",
+    name: "sha1-swift",
     products: [
         .library(
             name: "SHA1",
