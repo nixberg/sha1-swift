@@ -1,3 +1,3 @@
 # SHA1
 
-Pure Swift SHA-1 implementation. For [cryptopals](https://cryptopals.com). Do not use.
+Pure Swift SHA-1 implementation. Experimental, do not use.
