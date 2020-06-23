@@ -12,7 +12,6 @@ final class SHA1Tests: XCTestCase {
         XCTAssertEqual(SHA1.hash(input).hex(), "2fd4e1c67a2d28fced849ee1bb76e7391b93eb12")
     }
     
-    @available(OSX 10.15, *)
     func testRandomInputs() {
         (1..<512).forEach {
             let input = [UInt8].random(count: $0)
@@ -20,17 +19,21 @@ final class SHA1Tests: XCTestCase {
         }
     }
     
-    @available(OSX 10.15, *)
     func testMultipleInputs() {
         (2..<32).forEach {
-            var sha1 = SHA1()
             let inputs = (0..<$0).map { _ in
                 [UInt8].random(count: .random(in: 0..<128))
             }
+            let joinedInputs = ArraySlice(inputs.joined())
+            
+            var sha1 = SHA1()
             inputs.forEach {
                 sha1.update(with: $0)
             }
-            XCTAssert(Insecure.SHA1.hash(data: ArraySlice(inputs.joined())).elementsEqual(sha1.finalize()))
+            let digest = sha1.finalize()
+            
+            XCTAssertEqual(digest, SHA1.hash(joinedInputs))
+            XCTAssert(Insecure.SHA1.hash(data: joinedInputs).elementsEqual(digest))
         }
     }
 }
