@@ -5,39 +5,100 @@ public struct SHA1 {
     
     private var state: (UInt32, UInt32, UInt32, UInt32, UInt32)
     
-    private var buffer = [UInt8](repeating: 0, count: 64)
-    private var length: Int = 0
+    private var buffer: SIMD64<UInt8> = .zero
+    private var digestedBytes: Int = 0
     
     private var expanded = [UInt32](repeating: 0, count: 80)
+    
+    private var done = false
     
     public init() {
         state = (0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0)
     }
     
+    public mutating func update<Input>(with input: Input) where Input: DataProtocol {
+        var index = digestedBytes % 64
+        digestedBytes += input.count
+        
+        for byte in input {
+            buffer[index] = byte
+            index += 1
+            
+            if index == 64 {
+                self.compress()
+                index = 0
+            }
+        }
+    }
+    
+    public mutating func finalize<Output>(to output: inout Output) where Output: MutableDataProtocol {
+        precondition(!done)
+        done = true
+        
+        let index = digestedBytes % 64
+        
+        buffer[index] = 0x80
+        for i in (index + 1)..<64 {
+            buffer[i] = 0
+        }
+        
+        if index >= 56 {
+            self.compress()
+            for i in 0..<56 {
+                buffer[i] = 0
+            }
+        }
+        
+        let digestedBits = 8 * UInt64(digestedBytes)
+        buffer[56] = UInt8(truncatingIfNeeded: digestedBits &>> 56)
+        buffer[57] = UInt8(truncatingIfNeeded: digestedBits &>> 48)
+        buffer[58] = UInt8(truncatingIfNeeded: digestedBits &>> 40)
+        buffer[59] = UInt8(truncatingIfNeeded: digestedBits &>> 32)
+        buffer[60] = UInt8(truncatingIfNeeded: digestedBits &>> 24)
+        buffer[61] = UInt8(truncatingIfNeeded: digestedBits &>> 16)
+        buffer[62] = UInt8(truncatingIfNeeded: digestedBits &>>  8)
+        buffer[63] = UInt8(truncatingIfNeeded: digestedBits &>>  0)
+        
+        self.compress()
+        
+        output.append(bigEndianBytesOf: state.0)
+        output.append(bigEndianBytesOf: state.1)
+        output.append(bigEndianBytesOf: state.2)
+        output.append(bigEndianBytesOf: state.3)
+        output.append(bigEndianBytesOf: state.4)
+    }
+    
+    public mutating func finalize() -> [UInt8] {
+        var output = [UInt8]()
+        output.reserveCapacity(Self.byteCount)
+        self.finalize(to: &output)
+        return output
+    }
+    
     private mutating func compress() {
         var state = self.state
         
-        var buffer = self.buffer[...]
-        for i in 0..<16 {
-            expanded[i] = UInt32(bigEndianBytes: buffer.prefix(4))
-            buffer = buffer.dropFirst(4)
+        expanded.removeAll(keepingCapacity: true)
+        
+        var indices = buffer.indices
+        for _ in 0..<16 {
+            expanded.append(indices.prefix(4).reduce(0) { ($0 &<< 8) | UInt32(buffer[$1]) })
+            indices = indices.dropFirst(4)
         }
         
         for i in 16..<80 {
-            expanded[i] = (
-                expanded[i -  3] ^
-                expanded[i -  8] ^
-                expanded[i - 14] ^
-                expanded[i - 16]
-            ).rotatedLeft(by: 1)
+            expanded.append((expanded[i -  3] ^
+                             expanded[i -  8] ^
+                             expanded[i - 14] ^
+                             expanded[i - 16]).rotated(left: 1))
         }
         
         @inline(__always)
         func round(_ i: Int, _ f: UInt32, _ k: UInt32) {
-            let t = state.0.rotatedLeft(by: 5) &+ f &+ state.4 &+ k &+ expanded[i]
+            let t = state.0.rotated(left: 5) &+ f &+ state.4 &+ k &+ expanded[i]
             state.4 = state.3
             state.3 = state.2
-            state.2 = state.1.rotatedLeft(by: 30)
+            state.2 = state.1.rotated(left: 30)
             state.1 = state.0
             state.0 = t
         }
@@ -76,61 +137,16 @@ public struct SHA1 {
         self.state.3 &+= state.3
         self.state.4 &+= state.4
     }
-    
-    public mutating func update<D>(with input: D) where D: DataProtocol {
-        var index = length % 64
-        length += input.count
-        
-        for byte in input {
-            buffer[index] = byte
-            index += 1
-            
-            if index == 64 {
-                self.compress()
-                index = 0
-            }
-        }
-    }
-    
-    public mutating func finalize<M>(into output: inout M) where M: MutableDataProtocol {
-        let index = length % 64
-        
-        buffer[index] = 0x80
-        buffer.resetBytes(in: (index + 1)..<64)
-        
-        if index >= 56 {
-            self.compress()
-            buffer.resetBytes(in: 0..<56)
-        }
-        
-        for (i, byte) in UInt64(8 * length).bigEndianBytes.enumerated() {
-            buffer[56 + i] = byte
-        }
-        self.compress()
-        
-        output.append(contentsOf: state.0.bigEndianBytes)
-        output.append(contentsOf: state.1.bigEndianBytes)
-        output.append(contentsOf: state.2.bigEndianBytes)
-        output.append(contentsOf: state.3.bigEndianBytes)
-        output.append(contentsOf: state.4.bigEndianBytes)
-    }
-    
-    public mutating func finalize() -> [UInt8] {
-        var output = [UInt8]()
-        output.reserveCapacity(Self.byteCount)
-        self.finalize(into: &output)
-        return output
-    }
 }
 
 public extension SHA1 {
-    static func hash<D, M>(_ input: D, into output: inout M) where D: DataProtocol, M: MutableDataProtocol {
+    static func hash<Input, Output>(_ input: Input, into output: inout Output) where Input: DataProtocol, Output: MutableDataProtocol {
         var hashFunction = Self()
         hashFunction.update(with: input)
-        hashFunction.finalize(into: &output)
+        hashFunction.finalize(to: &output)
     }
     
-    static func hash<D>(_ input: D) -> [UInt8] where D: DataProtocol {
+    static func hash<Input>(_ input: Input) -> [UInt8] where Input: DataProtocol {
         var hashFunction = Self()
         hashFunction.update(with: input)
         return hashFunction.finalize()
@@ -138,17 +154,18 @@ public extension SHA1 {
 }
 
 fileprivate extension FixedWidthInteger where Self: UnsignedInteger {
-    init<D>(bigEndianBytes bytes: D) where D: DataProtocol {
-        assert(bytes.count == Self.bitWidth / 8)
-        self = bytes.reduce(0, { $0 &<< 8 | Self($1) })
-    }
-    
-    var bigEndianBytes: [UInt8] {
-        stride(from: 0, to: Self.bitWidth, by: 8).reversed().map { UInt8(truncatingIfNeeded: self &>> $0) }
-    }
-    
     @inline(__always)
-    func rotatedLeft(by n: Int) -> Self {
-        (self &<< n) | (self &>> (Self.bitWidth - n))
+    func rotated(left count: Int) -> Self {
+        (self &<< count) | (self &>> (Self.bitWidth - count))
+    }
+}
+
+fileprivate extension MutableDataProtocol {
+    @inline(__always)
+    mutating func append(bigEndianBytesOf word: UInt32) {
+        self.append(UInt8(truncatingIfNeeded: word &>> 24))
+        self.append(UInt8(truncatingIfNeeded: word &>> 16))
+        self.append(UInt8(truncatingIfNeeded: word &>>  8))
+        self.append(UInt8(truncatingIfNeeded: word &>>  0))
     }
 }
