@@ -1,171 +1,158 @@
-import Foundation
+import Algorithms
+import Duplex
+import EndianBytes
 
-public struct SHA1 {
-    public static let byteCount = 20
+public struct SHA1: Duplex {
+    public typealias Output = [UInt8]
     
-    private var state: (UInt32, UInt32, UInt32, UInt32, UInt32)
+    public static var defaultOutputByteCount = 20
     
-    private var buffer: SIMD64<UInt8> = .zero
-    private var digestedBytes: Int = 0
+    private var state: State = .init()
+    private var digestedBytes = 0
     
-    private var expanded = [UInt32](repeating: 0, count: 80)
+    private var buffer: [UInt8] = []
     
     private var done = false
     
-    public init() {
-        state = (0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0)
-    }
+    public init() {}
     
-    public mutating func update<Input>(with input: Input) where Input: DataProtocol {
-        var index = digestedBytes % 64
-        digestedBytes += input.count
-        
-        for byte in input {
-            buffer[index] = byte
-            index += 1
-            
-            if index == 64 {
-                self.compress()
-                index = 0
-            }
-        }
-    }
-    
-    public mutating func finalize<Output>(to output: inout Output) where Output: MutableDataProtocol {
+    public mutating func absorb<Bytes>(contentsOf bytes: Bytes)
+    where Bytes: Sequence, Bytes.Element == UInt8 {
+        assert((0..<64).contains(buffer.count))
         precondition(!done)
-        done = true
         
-        let index = digestedBytes % 64
-        
-        buffer[index] = 0x80
-        for i in (index + 1)..<64 {
-            buffer[i] = 0
-        }
-        
-        if index >= 56 {
-            self.compress()
-            for i in 0..<56 {
-                buffer[i] = 0
+        for byte in bytes {
+            buffer.append(byte)
+            digestedBytes += 1
+            if buffer.count == 64 {
+                self.compress()
             }
         }
-        
-        let digestedBits = 8 * UInt64(digestedBytes)
-        buffer[56] = UInt8(truncatingIfNeeded: digestedBits &>> 56)
-        buffer[57] = UInt8(truncatingIfNeeded: digestedBits &>> 48)
-        buffer[58] = UInt8(truncatingIfNeeded: digestedBits &>> 40)
-        buffer[59] = UInt8(truncatingIfNeeded: digestedBits &>> 32)
-        buffer[60] = UInt8(truncatingIfNeeded: digestedBits &>> 24)
-        buffer[61] = UInt8(truncatingIfNeeded: digestedBits &>> 16)
-        buffer[62] = UInt8(truncatingIfNeeded: digestedBits &>>  8)
-        buffer[63] = UInt8(truncatingIfNeeded: digestedBits &>>  0)
-        
-        self.compress()
-        
-        output.append(bigEndianBytesOf: state.0)
-        output.append(bigEndianBytesOf: state.1)
-        output.append(bigEndianBytesOf: state.2)
-        output.append(bigEndianBytesOf: state.3)
-        output.append(bigEndianBytesOf: state.4)
     }
     
-    public mutating func finalize() -> [UInt8] {
-        var output = [UInt8]()
-        output.reserveCapacity(Self.byteCount)
-        self.finalize(to: &output)
+    public mutating func squeeze<Output>(to output: inout Output, outputByteCount: Int)
+    where Output: RangeReplaceableCollection, Output.Element == UInt8 {
+        precondition(outputByteCount == Self.defaultOutputByteCount)
+        
+        assert((0..<64).contains(buffer.count))
+        precondition(!done)
+        
+        buffer.append(0x80)
+        if buffer.count - 1 >= 56 {
+            buffer.padEnd(with: 0, toCount: 64)
+            self.compress()
+        }
+        buffer.padEnd(with: 0, toCount: 56)
+        buffer.append(contentsOf: (8 * UInt64(digestedBytes)).bigEndianBytes())
+        
+        self.compress(keepingBufferCapacity: false)
+        
+        output.append(contentsOf: state.a.bigEndianBytes())
+        output.append(contentsOf: state.b.bigEndianBytes())
+        output.append(contentsOf: state.c.bigEndianBytes())
+        output.append(contentsOf: state.d.bigEndianBytes())
+        output.append(contentsOf: state.e.bigEndianBytes())
+        
+        done = true
+    }
+    
+    public mutating func squeeze(outputByteCount: Int) -> Output {        
+        var output: [UInt8] = []
+        output.reserveCapacity(Self.defaultOutputByteCount)
+        self.squeeze(to: &output, outputByteCount: outputByteCount)
         return output
     }
     
-    private mutating func compress() {
+    private mutating func compress(keepingBufferCapacity: Bool = true) {
+        assert(buffer.count == 64)
+        
+        // TODO: withUnsafeTemporaryAllocation (Swift 5.6)
+        var expandedBuffer: [UInt32] = []
+        expandedBuffer.reserveCapacity(80)
+        
+        for chunk in buffer.chunks(ofCount: 4) {
+            expandedBuffer.append(UInt32(bigEndianBytes: chunk)!)
+        }
+        for i in 16..<80 {
+            expandedBuffer.append((expandedBuffer[i -  3] ^
+                                   expandedBuffer[i -  8] ^
+                                   expandedBuffer[i - 14] ^
+                                   expandedBuffer[i - 16]).rotated(left: 1))
+        }
+        
         var state = self.state
         
-        expanded.removeAll(keepingCapacity: true)
-        
-        var indices = buffer.indices
-        for _ in 0..<16 {
-            expanded.append(indices.prefix(4).reduce(0) { ($0 &<< 8) | UInt32(buffer[$1]) })
-            indices = indices.dropFirst(4)
-        }
-        
-        for i in 16..<80 {
-            expanded.append((expanded[i -  3] ^
-                             expanded[i -  8] ^
-                             expanded[i - 14] ^
-                             expanded[i - 16]).rotated(left: 1))
-        }
-        
-        @inline(__always)
-        func round(_ i: Int, _ f: UInt32, _ k: UInt32) {
-            let t = state.0.rotated(left: 5) &+ f &+ state.4 &+ k &+ expanded[i]
-            state.4 = state.3
-            state.3 = state.2
-            state.2 = state.1.rotated(left: 30)
-            state.1 = state.0
-            state.0 = t
-        }
-        
-        @inline(__always)
-        func choice(_ x: UInt32, _ y: UInt32, _ z: UInt32) -> UInt32 {
-            z ^ (x & (y ^ z))
-        }
-        
-        @inline(__always)
-        func parity(_ x: UInt32, _ y: UInt32, _ z: UInt32) -> UInt32 {
-            x ^ y ^ z
-        }
-        
-        @inline(__always)
-        func majority(_ x: UInt32, _ y: UInt32, _ z: UInt32) -> UInt32 {
-            (x & y) | (z & (x | y))
-        }
-        
-        for i in 0..<20 {
-            round(i, choice(state.1, state.2, state.3), 0x5a827999)
+        for i in 00..<20 {
+            state.round(expandedBuffer[i], state.choice, 0x5a827999)
         }
         for i in 20..<40 {
-            round(i, parity(state.1, state.2, state.3), 0x6ed9eba1)
+            state.round(expandedBuffer[i], state.parity, 0x6ed9eba1)
         }
         for i in 40..<60 {
-            round(i, majority(state.1, state.2, state.3), 0x8f1bbcdc)
+            state.round(expandedBuffer[i], state.majority, 0x8f1bbcdc)
         }
         for i in 60..<80 {
-            round(i, parity(state.1, state.2, state.3), 0xca62c1d6)
+            state.round(expandedBuffer[i], state.parity, 0xca62c1d6)
         }
         
-        self.state.0 &+= state.0
-        self.state.1 &+= state.1
-        self.state.2 &+= state.2
-        self.state.3 &+= state.3
-        self.state.4 &+= state.4
+        self.state &+= state
+        
+        buffer.removeAll(keepingCapacity: keepingBufferCapacity)
     }
 }
 
-public extension SHA1 {
-    static func hash<Input, Output>(_ input: Input, into output: inout Output) where Input: DataProtocol, Output: MutableDataProtocol {
-        var hashFunction = Self()
-        hashFunction.update(with: input)
-        hashFunction.finalize(to: &output)
+fileprivate struct State {
+    var a: UInt32 = 0x67452301
+    var b: UInt32 = 0xefcdab89
+    var c: UInt32 = 0x98badcfe
+    var d: UInt32 = 0x10325476
+    var e: UInt32 = 0xc3d2e1f0
+    
+    mutating func round(_ word: UInt32, _ f: UInt32, _ k: UInt32) {
+        let temporary = a.rotated(left: 5) &+ f &+ e &+ k &+ word
+        e = d
+        d = c
+        c = b.rotated(left: 30)
+        b = a
+        a = temporary
     }
     
-    static func hash<Input>(_ input: Input) -> [UInt8] where Input: DataProtocol {
-        var hashFunction = Self()
-        hashFunction.update(with: input)
-        return hashFunction.finalize()
+    var choice: UInt32 {
+        d ^ (b & (c ^ d))
+    }
+    
+    var parity: UInt32 {
+        b ^ c ^ d
+    }
+    
+    var majority: UInt32 {
+        (b & c) | (d & (b | c))
+    }
+    
+    static func &+= (lhs: inout Self, rhs: Self) {
+        lhs.a &+= rhs.a
+        lhs.b &+= rhs.b
+        lhs.c &+= rhs.c
+        lhs.d &+= rhs.d
+        lhs.e &+= rhs.e
     }
 }
 
+// TODO: Remove when available in Algorithms.
+fileprivate extension RangeReplaceableCollection {
+    mutating func padEnd(with element: Element, toCount paddedCount: Int) {
+        let padElementCount = paddedCount - count
+        guard padElementCount > 0 else {
+            return
+        }
+        self.append(contentsOf: repeatElement(element, count: padElementCount))
+    }
+}
+
+// TODO: Remove when available in Numerics.
 fileprivate extension FixedWidthInteger where Self: UnsignedInteger {
     @inline(__always)
     func rotated(left count: Int) -> Self {
         (self &<< count) | (self &>> (Self.bitWidth - count))
-    }
-}
-
-fileprivate extension MutableDataProtocol {
-    @inline(__always)
-    mutating func append(bigEndianBytesOf word: UInt32) {
-        self.append(UInt8(truncatingIfNeeded: word &>> 24))
-        self.append(UInt8(truncatingIfNeeded: word &>> 16))
-        self.append(UInt8(truncatingIfNeeded: word &>>  8))
-        self.append(UInt8(truncatingIfNeeded: word &>>  0))
     }
 }
