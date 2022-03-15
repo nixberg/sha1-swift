@@ -13,7 +13,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-algorithms.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-crypto.git", "1.0.0"..<"3.0.0"),
         .package(url: "https://github.com/nixberg/crypto-traits-swift", from: "0.1.0"),
-        .package(url: "https://github.com/nixberg/endianbytes-swift", from: "0.3.0"),
+        .package(url: "https://github.com/nixberg/endianbytes-swift", from: "0.4.0"),
         .package(url: "https://github.com/nixberg/hexstring-swift", from: "0.2.0"),
     ],
     targets: [

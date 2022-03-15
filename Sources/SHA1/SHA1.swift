@@ -66,36 +66,41 @@ public struct SHA1: Duplex {
     private mutating func compress(keepingBufferCapacity: Bool = true) {
         assert(buffer.count == 64)
         
-        // TODO: withUnsafeTemporaryAllocation (Swift 5.6)
-        var expandedBuffer: [UInt32] = []
-        expandedBuffer.reserveCapacity(80)
+        withUnsafeTemporaryAllocation(of: UInt32.self, capacity: 80) { expandedBuffer in
+            for (i, chunk) in zip(0..<16, buffer.chunks(ofCount: 4)) {
+                expandedBuffer
+                    .baseAddress!
+                    .advanced(by: i)
+                    .initialize(to: .init(bigEndianBytes: chunk))
+            }
+            
+            for i in 16..<80 {
+                expandedBuffer
+                    .baseAddress!
+                    .advanced(by: i)
+                    .initialize(to: (expandedBuffer[i -  3] ^
+                                     expandedBuffer[i -  8] ^
+                                     expandedBuffer[i - 14] ^
+                                     expandedBuffer[i - 16]).rotated(left: 1))
+            }
+
+            var state = self.state
         
-        for chunk in buffer.chunks(ofCount: 4) {
-            expandedBuffer.append(UInt32(bigEndianBytes: chunk)!)
-        }
-        for i in 16..<80 {
-            expandedBuffer.append((expandedBuffer[i -  3] ^
-                                   expandedBuffer[i -  8] ^
-                                   expandedBuffer[i - 14] ^
-                                   expandedBuffer[i - 16]).rotated(left: 1))
-        }
+            for i in 00..<20 {
+                state.round(expandedBuffer[i], state.choice, 0x5a827999)
+            }
+            for i in 20..<40 {
+                state.round(expandedBuffer[i], state.parity, 0x6ed9eba1)
+            }
+            for i in 40..<60 {
+                state.round(expandedBuffer[i], state.majority, 0x8f1bbcdc)
+            }
+            for i in 60..<80 {
+                state.round(expandedBuffer[i], state.parity, 0xca62c1d6)
+            }
         
-        var state = self.state
-        
-        for i in 00..<20 {
-            state.round(expandedBuffer[i], state.choice, 0x5a827999)
+            self.state &+= state
         }
-        for i in 20..<40 {
-            state.round(expandedBuffer[i], state.parity, 0x6ed9eba1)
-        }
-        for i in 40..<60 {
-            state.round(expandedBuffer[i], state.majority, 0x8f1bbcdc)
-        }
-        for i in 60..<80 {
-            state.round(expandedBuffer[i], state.parity, 0xca62c1d6)
-        }
-        
-        self.state &+= state
         
         buffer.removeAll(keepingCapacity: keepingBufferCapacity)
     }
@@ -149,7 +154,6 @@ fileprivate extension RangeReplaceableCollection {
     }
 }
 
-// TODO: Remove when available in Numerics.
 fileprivate extension FixedWidthInteger where Self: UnsignedInteger {
     @inline(__always)
     func rotated(left count: Int) -> Self {
