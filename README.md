@@ -1,5 +1,7 @@
-![Swift](https://github.com/nixberg/sha1-swift/workflows/Swift/badge.svg?event=push)
+[![Swift](https://github.com/nixberg/sha1-swift/actions/workflows/swift.yml/badge.svg)](
+https://github.com/nixberg/sha1-swift/actions/workflows/swift.yml)
 
-# SHA1
+# sha1-swift
 
-Pure Swift SHA-1 implementation. Experimental, do not use.
+Swift implementation of the [SHA-1 hash function](https://en.wikipedia.org/wiki/SHA-1).
+Experimental, do not use.
