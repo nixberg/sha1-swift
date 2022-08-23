@@ -7,19 +7,21 @@ final class SHA1Tests: XCTestCase {
     func testZero() {
         XCTAssertEqual(
             SHA1.hash(contentsOf: EmptyCollection()),
-            "da39a3ee5e6b4b0d3255bfef95601890afd80709")
+            [UInt8](hexString: "da39a3ee5e6b4b0d3255bfef95601890afd80709")!
+        )
     }
     
     func testQuickBrownFox() {
         XCTAssertEqual(
             SHA1.hash(contentsOf: "The quick brown fox jumps over the lazy dog".utf8),
-            "2fd4e1c67a2d28fced849ee1bb76e7391b93eb12")
+            [UInt8](hexString: "2fd4e1c67a2d28fced849ee1bb76e7391b93eb12")!
+        )
     }
     
     func testRandomInputs() {
         (1..<512).forEach {
             let bytes: [UInt8] = .random(count: $0)
-            XCTAssert(Insecure.SHA1.hash(data: bytes).elementsEqual(SHA1.hash(contentsOf: bytes)))
+            XCTAssert(SHA1.hash(contentsOf: bytes).elementsEqual(Insecure.SHA1.hash(data: bytes)))
         }
     }
     
@@ -45,6 +47,32 @@ final class SHA1Tests: XCTestCase {
 fileprivate extension Array where Element == UInt8 {
     static func random(count: Int) -> Self {
         var rng = SystemRandomNumberGenerator()
-        return (0..<count).map { _ in rng.next() }
+        return (0..<count).map({ _ in rng.next() })
     }
 }
+
+//public protocol Duplex {
+//    static func hash(contentsOf bytes: some Sequence<UInt8>, outputByteCount: Int) -> [UInt8]
+//
+//    //static func hash(contentsOf bytes: some Sequence<UInt8>) -> [UInt8]
+//}
+//
+//public extension Duplex {
+//    static func hash(contentsOf bytes: some Sequence<UInt8>, outputByteCount: Int = 123) -> [UInt8] {
+//        []
+//    }
+//
+////static func hash(contentsOf bytes: some Sequence<UInt8>) -> Output
+////    where Bytes: Sequence, Bytes.Element == UInt8 {
+////        var duplex: Self = .init()
+////        duplex.absorb(contentsOf: bytes)
+////        return duplex.squeeze(outputByteCount: Self.defaultOutputByteCount)
+////    }
+//}
+////
+////struct asd: Duplex {
+////
+////    static func test() {
+////        Self.hash(contentsOf: [], outputByteCount: 123)
+////    }
+////}

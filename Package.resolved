@@ -1,61 +1,77 @@
 {
-  "object": {
-    "pins": [
-      {
-        "package": "crypto-traits-swift",
-        "repositoryURL": "https://github.com/nixberg/crypto-traits-swift",
-        "state": {
-          "branch": null,
-          "revision": "be14c839fa8d5e94700c9635bb220a911b1d01f3",
-          "version": "0.1.0"
-        }
-      },
-      {
-        "package": "endianbytes-swift",
-        "repositoryURL": "https://github.com/nixberg/endianbytes-swift",
-        "state": {
-          "branch": null,
-          "revision": "c09b87de7948c2e95d2a9c3faba34ab2cb24ba3b",
-          "version": "0.4.0"
-        }
-      },
-      {
-        "package": "hexstring-swift",
-        "repositoryURL": "https://github.com/nixberg/hexstring-swift",
-        "state": {
-          "branch": null,
-          "revision": "c501ec4e65375e9ea6893997ef3af959ccd84a11",
-          "version": "0.4.0"
-        }
-      },
-      {
-        "package": "swift-algorithms",
-        "repositoryURL": "https://github.com/apple/swift-algorithms.git",
-        "state": {
-          "branch": null,
-          "revision": "b14b7f4c528c942f121c8b860b9410b2bf57825e",
-          "version": "1.0.0"
-        }
-      },
-      {
-        "package": "swift-crypto",
-        "repositoryURL": "https://github.com/apple/swift-crypto.git",
-        "state": {
-          "branch": null,
-          "revision": "127d3745c37b5705e4bc8d16c7951c48dcc3332c",
-          "version": "2.0.0"
-        }
-      },
-      {
-        "package": "swift-numerics",
-        "repositoryURL": "https://github.com/apple/swift-numerics",
-        "state": {
-          "branch": null,
-          "revision": "0a23770641f65a4de61daf5425a37ae32a3fd00d",
-          "version": "1.0.1"
-        }
+  "pins" : [
+    {
+      "identity" : "crypto-traits-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nixberg/crypto-traits-swift",
+      "state" : {
+        "revision" : "be14c839fa8d5e94700c9635bb220a911b1d01f3",
+        "version" : "0.1.0"
       }
-    ]
-  },
-  "version": 1
+    },
+    {
+      "identity" : "endianbytes-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nixberg/endianbytes-swift",
+      "state" : {
+        "revision" : "c58c2275ba94c50de2573c5a1df3f5ceb2089cb4",
+        "version" : "0.5.1"
+      }
+    },
+    {
+      "identity" : "fixed-size-array-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nixberg/fixed-size-array-swift",
+      "state" : {
+        "branch" : "main",
+        "revision" : "2e6ba5a35142da49a420b58ec50bc32a6b050c1f"
+      }
+    },
+    {
+      "identity" : "hexstring-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nixberg/hexstring-swift",
+      "state" : {
+        "revision" : "a9d1e15e3547037216b8f5556544f38164867725",
+        "version" : "0.5.0"
+      }
+    },
+    {
+      "identity" : "swift-algorithms",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-algorithms.git",
+      "state" : {
+        "revision" : "b14b7f4c528c942f121c8b860b9410b2bf57825e",
+        "version" : "1.0.0"
+      }
+    },
+    {
+      "identity" : "swift-argument-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-argument-parser",
+      "state" : {
+        "revision" : "df9ee6676cd5b3bf5b330ec7568a5644f547201b",
+        "version" : "1.1.3"
+      }
+    },
+    {
+      "identity" : "swift-crypto",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-crypto",
+      "state" : {
+        "revision" : "d9825fa541df64b1a7b182178d61b9a82730d01f",
+        "version" : "2.1.0"
+      }
+    },
+    {
+      "identity" : "swift-numerics",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-numerics",
+      "state" : {
+        "revision" : "0a5bc04095a675662cf24757cc0640aa2204253b",
+        "version" : "1.0.2"
+      }
+    }
+  ],
+  "version" : 2
 }
