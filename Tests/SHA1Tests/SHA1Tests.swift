@@ -5,74 +5,55 @@ import XCTest
 
 final class SHA1Tests: XCTestCase {
     func testZero() {
-        XCTAssertEqual(
-            SHA1.hash(contentsOf: EmptyCollection()),
-            [UInt8](hexString: "da39a3ee5e6b4b0d3255bfef95601890afd80709")!
-        )
+        let digest = SHA1.hash(contentsOf: EmptyCollection())
+        let expectedHexString = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+        XCTAssert(digest.elementsEqual(Array(hexString: expectedHexString)!))
+        XCTAssertEqual(String(describing: digest), "SHA-1 digest: \(expectedHexString)")
     }
     
     func testQuickBrownFox() {
-        XCTAssertEqual(
-            SHA1.hash(contentsOf: "The quick brown fox jumps over the lazy dog".utf8),
-            [UInt8](hexString: "2fd4e1c67a2d28fced849ee1bb76e7391b93eb12")!
-        )
+        let digest = SHA1.hash(contentsOf: "The quick brown fox jumps over the lazy dog".utf8)
+        let expectedHexString = "2fd4e1c67a2d28fced849ee1bb76e7391b93eb12"
+        XCTAssert(digest.elementsEqual(Array(hexString: expectedHexString)!))
+        XCTAssertEqual(String(describing: digest), "SHA-1 digest: \(expectedHexString)")
     }
     
     func testRandomInputs() {
         (1..<512).forEach {
             let bytes: [UInt8] = .random(count: $0)
-            XCTAssert(SHA1.hash(contentsOf: bytes).elementsEqual(Insecure.SHA1.hash(data: bytes)))
+            let digest = SHA1.hash(contentsOf: bytes)
+            let expectedDigest = Insecure.SHA1.hash(data: bytes)
+            XCTAssert(digest.elementsEqual(expectedDigest))
+            XCTAssertEqual(
+                String(describing: digest).suffix(40),
+                String(describing: expectedDigest).suffix(40)
+            )
         }
     }
     
     func testMultipleInputs() {
-        (2..<32).forEach {
-            let inputs = (0..<$0).map { _ in
+        for count in 2..<32 {
+            let inputs = (0..<count).map { _ in
                 [UInt8].random(count: .random(in: 0..<128))
             }
             let joinedInputs = Array(inputs.joined())
             
-            var sha1: SHA1 = .init()
+            var sha1 = SHA1()
             inputs.forEach {
                 sha1.absorb(contentsOf: $0)
             }
-            let digest = sha1.squeeze()
+            var digest = [UInt8](repeating: 0, count: SHA1.defaultOutputByteCount)
+            sha1.squeeze(into: &digest)
             
-            XCTAssertEqual(digest, SHA1.hash(contentsOf: joinedInputs))
+            XCTAssert(digest.elementsEqual(SHA1.hash(contentsOf: joinedInputs)))
             XCTAssert(Insecure.SHA1.hash(data: joinedInputs).elementsEqual(digest))
         }
     }
 }
 
-fileprivate extension Array where Element == UInt8 {
+fileprivate extension Array<UInt8> {
     static func random(count: Int) -> Self {
         var rng = SystemRandomNumberGenerator()
         return (0..<count).map({ _ in rng.next() })
     }
 }
-
-//public protocol Duplex {
-//    static func hash(contentsOf bytes: some Sequence<UInt8>, outputByteCount: Int) -> [UInt8]
-//
-//    //static func hash(contentsOf bytes: some Sequence<UInt8>) -> [UInt8]
-//}
-//
-//public extension Duplex {
-//    static func hash(contentsOf bytes: some Sequence<UInt8>, outputByteCount: Int = 123) -> [UInt8] {
-//        []
-//    }
-//
-////static func hash(contentsOf bytes: some Sequence<UInt8>) -> Output
-////    where Bytes: Sequence, Bytes.Element == UInt8 {
-////        var duplex: Self = .init()
-////        duplex.absorb(contentsOf: bytes)
-////        return duplex.squeeze(outputByteCount: Self.defaultOutputByteCount)
-////    }
-//}
-////
-////struct asd: Duplex {
-////
-////    static func test() {
-////        Self.hash(contentsOf: [], outputByteCount: 123)
-////    }
-////}

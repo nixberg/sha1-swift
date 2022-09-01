@@ -13,7 +13,6 @@ struct Buffer {
     }
     
     mutating func append(_ byte: UInt8) {
-        assert(storage.indices.contains(endIndex))
         storage[endIndex] = byte
         endIndex += 1
     }

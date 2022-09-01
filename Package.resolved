@@ -1,11 +1,11 @@
 {
   "pins" : [
     {
-      "identity" : "crypto-traits-swift",
+      "identity" : "crypto-protocols-swift",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/nixberg/crypto-traits-swift",
+      "location" : "https://github.com/nixberg/crypto-protocols-swift",
       "state" : {
-        "revision" : "be14c839fa8d5e94700c9635bb220a911b1d01f3",
+        "revision" : "c101133835195368b8839076eaa68c03a8145bbc",
         "version" : "0.1.0"
       }
     },
@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nixberg/fixed-size-array-swift",
       "state" : {
-        "branch" : "main",
-        "revision" : "2e6ba5a35142da49a420b58ec50bc32a6b050c1f"
+        "revision" : "ba0d8ae0e6426335fd05f80eefbe30dce5fb7c97",
+        "version" : "0.1.0"
       }
     },
     {
@@ -50,8 +50,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-argument-parser",
       "state" : {
-        "revision" : "df9ee6676cd5b3bf5b330ec7568a5644f547201b",
-        "version" : "1.1.3"
+        "revision" : "9f39744e025c7d377987f30b03770805dcb0bcd1",
+        "version" : "1.1.4"
       }
     },
     {

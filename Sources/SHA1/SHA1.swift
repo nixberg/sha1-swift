@@ -1,11 +1,9 @@
 import Algorithms
+@_exported
 import Duplex
 import EndianBytes
 
 public struct SHA1: Duplex {
-    
-    public typealias Output = [UInt8]
-    
     public static var defaultOutputByteCount = 20
     
     private var state = State()
@@ -17,8 +15,8 @@ public struct SHA1: Duplex {
     
     public init() {}
     
-    public mutating func absorb(contentsOf bytes: some Sequence<UInt8>) {
-        precondition(!done)
+    public mutating func absorb(contentsOf bytes: some ByteSequence) {
+        precondition(!done, "SHA-1 used after finalization")
         for byte in bytes {
             buffer.append(byte)
             digestedBits += 8
@@ -28,15 +26,12 @@ public struct SHA1: Duplex {
         }
     }
     
-    public mutating func squeeze(
-        to output: inout some RangeReplaceableCollection<UInt8>,
-        outputByteCount: Int
-    ) {
+    public mutating func squeeze(to byteSink: inout some ByteSink, outputByteCount: Int) {
         precondition(
             outputByteCount == Self.defaultOutputByteCount,
             "SHA-1 does not support arbitrary-length outputs"
         )
-        precondition(!done)
+        precondition(!done, "SHA-1 used after finalization")
         
         buffer.append(0x80)
         if buffer.count > 56 {
@@ -48,20 +43,13 @@ public struct SHA1: Duplex {
         
         self.compress()
         
-        output.append(contentsOf: state.a.bigEndianBytes())
-        output.append(contentsOf: state.b.bigEndianBytes())
-        output.append(contentsOf: state.c.bigEndianBytes())
-        output.append(contentsOf: state.d.bigEndianBytes())
-        output.append(contentsOf: state.e.bigEndianBytes())
+        byteSink.write(contentsOf: state.a.bigEndianBytes())
+        byteSink.write(contentsOf: state.b.bigEndianBytes())
+        byteSink.write(contentsOf: state.c.bigEndianBytes())
+        byteSink.write(contentsOf: state.d.bigEndianBytes())
+        byteSink.write(contentsOf: state.e.bigEndianBytes())
         
         done = true
-    }
-    
-    public mutating func squeeze(outputByteCount: Int) -> Output {
-        var output: [UInt8] = []
-        output.reserveCapacity(Self.defaultOutputByteCount)
-        self.squeeze(to: &output, outputByteCount: outputByteCount)
-        return output
     }
     
     private mutating func compress() {
@@ -69,16 +57,16 @@ public struct SHA1: Duplex {
         
         var expandedBuffer: Array80<UInt32> = .init(repeating: 0)
         
-        for (i, chunk) in zip(expandedBuffer.indices.prefix(16), buffer.chunks(ofCount: 4)) {
-            expandedBuffer[i] = UInt32(bigEndianBytes: chunk)
+        for (index, chunk) in zip(expandedBuffer.indices.prefix(16), buffer.chunks(ofCount: 4)) {
+            expandedBuffer[index] = UInt32(bigEndianBytes: chunk)
         }
         
-        for i in expandedBuffer.indices.dropFirst(16) {
-            expandedBuffer[i] = (
-                expandedBuffer[i -  3] ^
-                expandedBuffer[i -  8] ^
-                expandedBuffer[i - 14] ^
-                expandedBuffer[i - 16]
+        for index in expandedBuffer.indices.dropFirst(16) {
+            expandedBuffer[index] = (
+                expandedBuffer[index -  3] ^
+                expandedBuffer[index -  8] ^
+                expandedBuffer[index - 14] ^
+                expandedBuffer[index - 16]
             ).rotated(left: 1)
         }
         
@@ -100,6 +88,16 @@ public struct SHA1: Duplex {
         self.state &+= state
         
         buffer.removeAll()
+    }
+}
+
+extension SHA1: FixedSizeOutputProtocol {
+    public typealias FixedSizeOutput = SHA1.Digest
+    
+    public mutating func squeeze() -> FixedSizeOutput {
+        var output = FixedSizeOutput()
+        self.squeeze(into: &output.bytes)
+        return output
     }
 }
 
