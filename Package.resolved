@@ -1,75 +1,30 @@
 {
   "pins" : [
     {
-      "identity" : "crypto-protocols-swift",
+      "identity" : "blobby-swift",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/nixberg/crypto-protocols-swift",
+      "location" : "https://github.com/nixberg/blobby-swift",
       "state" : {
-        "revision" : "c101133835195368b8839076eaa68c03a8145bbc",
-        "version" : "0.1.0"
+        "branch" : "main",
+        "revision" : "05963eb236191a4318cd35ae112d21db895aafa8"
       }
     },
     {
-      "identity" : "endianbytes-swift",
+      "identity" : "swift-collections",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/nixberg/endianbytes-swift",
+      "location" : "https://github.com/apple/swift-collections",
       "state" : {
-        "revision" : "c58c2275ba94c50de2573c5a1df3f5ceb2089cb4",
-        "version" : "0.5.1"
+        "revision" : "937e904258d22af6e447a0b72c0bc67583ef64a2",
+        "version" : "1.0.4"
       }
     },
     {
-      "identity" : "fixed-size-array-swift",
+      "identity" : "tuple-sequences-swift",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/nixberg/fixed-size-array-swift",
+      "location" : "https://github.com/nixberg/tuple-sequences-swift",
       "state" : {
-        "revision" : "ba0d8ae0e6426335fd05f80eefbe30dce5fb7c97",
-        "version" : "0.1.0"
-      }
-    },
-    {
-      "identity" : "hexstring-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/nixberg/hexstring-swift",
-      "state" : {
-        "revision" : "a9d1e15e3547037216b8f5556544f38164867725",
-        "version" : "0.5.0"
-      }
-    },
-    {
-      "identity" : "swift-algorithms",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-algorithms.git",
-      "state" : {
-        "revision" : "b14b7f4c528c942f121c8b860b9410b2bf57825e",
+        "revision" : "75a2dbf63969ef8a2ff57a4bddc6b913af952c01",
         "version" : "1.0.0"
-      }
-    },
-    {
-      "identity" : "swift-argument-parser",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-argument-parser",
-      "state" : {
-        "revision" : "9f39744e025c7d377987f30b03770805dcb0bcd1",
-        "version" : "1.1.4"
-      }
-    },
-    {
-      "identity" : "swift-crypto",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-crypto",
-      "state" : {
-        "revision" : "d9825fa541df64b1a7b182178d61b9a82730d01f",
-        "version" : "2.1.0"
-      }
-    },
-    {
-      "identity" : "swift-numerics",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-numerics",
-      "state" : {
-        "revision" : "0a5bc04095a675662cf24757cc0640aa2204253b",
-        "version" : "1.0.2"
       }
     }
   ],

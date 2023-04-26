@@ -4,43 +4,25 @@ import PackageDescription
 
 let package = Package(
     name: "sha1-swift",
-    platforms: [
-        .macOS(.v13),
-    ],
     products: [
         .library(
             name: "SHA1",
             targets: ["SHA1"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-algorithms", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-crypto", from: "2.0.0"),
-        
-        .package(url: "https://github.com/nixberg/crypto-protocols-swift", "0.1.0"..<"0.2.0"),
-        .package(url: "https://github.com/nixberg/endianbytes-swift", "0.5.0"..<"0.6.0"),
-        .package(url: "https://github.com/nixberg/fixed-size-array-swift", "0.1.0"..<"0.2.0"),
-        .package(url: "https://github.com/nixberg/hexstring-swift", "0.5.0"..<"0.6.0"),
+        .package(url: "https://github.com/nixberg/blobby-swift", branch: "main"),
     ],
     targets: [
         .target(
-            name: "SHA1",
-            dependencies: [
-                .product(name: "Algorithms", package: "swift-algorithms"),
-                .product(name: "CryptoProtocols", package: "crypto-protocols-swift"),
-                .product(name: "EndianBytes", package: "endianbytes-swift"),
-                .product(name: "FixedSizeArray", package: "fixed-size-array-swift"),
-                .product(name: "HexString", package: "hexstring-swift"),
-            ],
-            exclude: ["fixed-size-arrays.json"],
-            plugins: [
-                .plugin(name: "FixedSizeArrayGeneratorPlugin", package: "fixed-size-array-swift"),
-            ]),
+            name: "SHA1"),
         .testTarget(
             name: "SHA1Tests",
             dependencies: [
-                .product(name: "Crypto", package: "swift-crypto"),
-                .product(name: "HexString", package: "hexstring-swift"),
+                .product(name: "Blobby", package: "blobby-swift"),
                 "SHA1",
+            ],
+            resources: [
+                .copy("sha1.blb"),
             ]),
     ]
 )

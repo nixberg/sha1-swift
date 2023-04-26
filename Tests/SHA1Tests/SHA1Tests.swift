@@ -1,59 +1,25 @@
-import Crypto
-import HexString
+import Blobby
 import SHA1
 import XCTest
 
 final class SHA1Tests: XCTestCase {
-    func testZero() {
-        let digest = SHA1.hash(contentsOf: EmptyCollection())
-        let expectedHexString = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
-        XCTAssert(digest.elementsEqual(Array(hexString: expectedHexString)!))
-        XCTAssertEqual(String(describing: digest), "SHA-1 digest: \(expectedHexString)")
-    }
+    let testVectors = try! Data(
+        contentsOf: Bundle.module.url(forResource: "sha1", withExtension: "blb")!
+    ).blobs().couples()
     
-    func testQuickBrownFox() {
-        let digest = SHA1.hash(contentsOf: "The quick brown fox jumps over the lazy dog".utf8)
-        let expectedHexString = "2fd4e1c67a2d28fced849ee1bb76e7391b93eb12"
-        XCTAssert(digest.elementsEqual(Array(hexString: expectedHexString)!))
-        XCTAssertEqual(String(describing: digest), "SHA-1 digest: \(expectedHexString)")
-    }
-    
-    func testRandomInputs() {
-        (1..<512).forEach {
-            let bytes: [UInt8] = .random(count: $0)
-            let digest = SHA1.hash(contentsOf: bytes)
-            let expectedDigest = Insecure.SHA1.hash(data: bytes)
-            XCTAssert(digest.elementsEqual(expectedDigest))
-            XCTAssertEqual(
-                String(describing: digest).suffix(40),
-                String(describing: expectedDigest).suffix(40)
-            )
+    func test() {
+        for (message, expectedOutput) in testVectors {
+            XCTAssert(SHA1.hash(contentsOf: message).elementsEqual(expectedOutput))
         }
     }
     
-    func testMultipleInputs() {
-        for count in 2..<32 {
-            let inputs = (0..<count).map { _ in
-                [UInt8].random(count: .random(in: 0..<128))
-            }
-            let joinedInputs = Array(inputs.joined())
-            
-            var sha1 = SHA1()
-            inputs.forEach {
-                sha1.absorb(contentsOf: $0)
-            }
-            var digest = [UInt8](repeating: 0, count: SHA1.defaultOutputByteCount)
-            sha1.squeeze(into: &digest)
-            
-            XCTAssert(digest.elementsEqual(SHA1.hash(contentsOf: joinedInputs)))
-            XCTAssert(Insecure.SHA1.hash(data: joinedInputs).elementsEqual(digest))
+    func testRandomlySplitMessages() {
+        for (message, expectedOutput) in testVectors {
+            var hashFunction = SHA1()
+            let count = Int.random(in: 0...message.count)
+            hashFunction.append(contentsOf: message.prefix(count))
+            hashFunction.append(contentsOf: message.dropFirst(count))
+            XCTAssert(hashFunction.finalize().elementsEqual(expectedOutput))
         }
-    }
-}
-
-fileprivate extension Array<UInt8> {
-    static func random(count: Int) -> Self {
-        var rng = SystemRandomNumberGenerator()
-        return (0..<count).map({ _ in rng.next() })
     }
 }
