@@ -15,7 +15,7 @@ extension SHA1.Digest: RandomAccessCollection {
     
     @inline(__always)
     public subscript(position: Index) -> Element {
-        precondition(indices.contains(position))
+        precondition(indices.contains(position), "Index out of range")
         return self.withUnsafeBufferPointer {
             $0[position]
         }
