@@ -3,9 +3,7 @@ import SHA1
 import XCTest
 
 final class SHA1Tests: XCTestCase {
-    let testVectors = try! Data(
-        contentsOf: Bundle.module.url(forResource: "sha1", withExtension: "blb")!
-    ).blobs().couples()
+    let testVectors = try! PackageResources.sha1_blb.blobs().couples()
     
     func test() {
         for (message, expectedOutput) in testVectors {

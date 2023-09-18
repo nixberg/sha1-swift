@@ -22,7 +22,7 @@ let package = Package(
                 "SHA1",
             ],
             resources: [
-                .copy("sha1.blb"),
+                .embedInCode("sha1.blb"),
             ]),
     ]
 )
