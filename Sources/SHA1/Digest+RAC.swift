@@ -3,17 +3,14 @@ extension SHA1.Digest: RandomAccessCollection {
     
     public typealias Index = Int
     
-    @inline(__always)
     public var startIndex: Index {
         0
     }
     
-    @inline(__always)
     public var endIndex: Index {
         MemoryLayout<Self>.size
     }
     
-    @inline(__always)
     public subscript(position: Index) -> Element {
         precondition(indices.contains(position), "Index out of range")
         return self.withUnsafeBufferPointer {
@@ -21,17 +18,14 @@ extension SHA1.Digest: RandomAccessCollection {
         }
     }
     
-    @inline(__always)
     public var first: Element {
         self[startIndex]
     }
     
-    @inline(__always)
     public var last: Element {
         self[self.index(before: endIndex)]
     }
     
-    @inline(__always)
     public func withContiguousStorageIfAvailable<R>(
         _ body: (UnsafeBufferPointer<Element>) throws -> R
     ) rethrows -> R? {
@@ -40,7 +34,6 @@ extension SHA1.Digest: RandomAccessCollection {
 }
 
 extension SHA1.Digest {
-    @inline(__always)
     public func withUnsafeBufferPointer<R>(
         _ body: (UnsafeBufferPointer<Element>) throws -> R
     ) rethrows -> R {
@@ -49,7 +42,6 @@ extension SHA1.Digest {
         }
     }
     
-    @inline(__always)
     public func withUnsafeBytes<R>(
         _ body: (UnsafeRawBufferPointer) throws -> R
     ) rethrows -> R {

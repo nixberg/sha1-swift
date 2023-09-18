@@ -55,7 +55,6 @@ struct State {
         }
     }
     
-    @inline(__always)
     private mutating func round(with word: UInt32, _ f: UInt32, _ k: UInt32) {
         let temp = a.rotated(left: 5) &+ f &+ e &+ k &+ word
         e = d
@@ -65,22 +64,18 @@ struct State {
         a = temp
     }
     
-    @inline(__always)
     private var choice: UInt32 {
         d ^ (b & (c ^ d))
     }
     
-    @inline(__always)
     private var parity: UInt32 {
         b ^ c ^ d
     }
     
-    @inline(__always)
     private var majority: UInt32 {
         (b & c) | (d & (b | c))
     }
     
-    @inline(__always)
     static func &+= (lhs: inout Self, rhs: Self) {
         lhs.a &+= rhs.a
         lhs.b &+= rhs.b
@@ -91,7 +86,6 @@ struct State {
 }
 
 extension UInt32 {
-    @inline(__always)
     fileprivate func rotated(left count: Int) -> Self {
         self << count | self >> (Self.bitWidth - count)
     }
