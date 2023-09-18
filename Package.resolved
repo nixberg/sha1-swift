@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nixberg/blobby-swift",
       "state" : {
-        "branch" : "main",
-        "revision" : "05963eb236191a4318cd35ae112d21db895aafa8"
+        "revision" : "05963eb236191a4318cd35ae112d21db895aafa8",
+        "version" : "0.2.0"
       }
     },
     {
