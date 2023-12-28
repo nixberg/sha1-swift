@@ -1,29 +1,35 @@
+extension SHA1 {
+    public struct Digest {
+        private var a: UInt32
+        private var b: UInt32
+        private var c: UInt32
+        private var d: UInt32
+        private var e: UInt32
+        
+        init(state: consuming State) {
+            a = state.a.bigEndian
+            b = state.b.bigEndian
+            c = state.c.bigEndian
+            d = state.d.bigEndian
+            e = state.e.bigEndian
+        }
+    }
+}
+
 extension SHA1.Digest: RandomAccessCollection {
-    public typealias Element = UInt8
-    
-    public typealias Index = Int
-    
-    public var startIndex: Index {
+    public var startIndex: Int {
         0
     }
     
-    public var endIndex: Index {
-        MemoryLayout<Self>.size
+    public var endIndex: Int {
+        20
     }
     
-    public subscript(position: Index) -> Element {
-        precondition(indices.contains(position), "Index out of range")
+    public subscript(index: Int) -> UInt8 {
+        precondition(indices.contains(index), "Index out of range")
         return self.withUnsafeBufferPointer {
-            $0[position]
+            $0[index]
         }
-    }
-    
-    public var first: Element {
-        self[startIndex]
-    }
-    
-    public var last: Element {
-        self[self.index(before: endIndex)]
     }
     
     public func withContiguousStorageIfAvailable<R>(

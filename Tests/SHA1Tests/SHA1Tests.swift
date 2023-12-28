@@ -25,7 +25,8 @@ final class SHA1Tests: XCTestCase {
             let count = Int.random(in: 0...message.count)
             hashFunction.append(contentsOf: message.prefix(count))
             hashFunction.append(contentsOf: message.dropFirst(count))
-            XCTAssert(hashFunction.finalize().elementsEqual(expectedOutput))
+            let digest = hashFunction.finalized()
+            XCTAssert(digest.elementsEqual(expectedOutput))
         }
     }
 }
