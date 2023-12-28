@@ -10,7 +10,9 @@ let package = Package(
             targets: ["SHA1"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/nixberg/blobby-swift", "0.2.0"..<"0.3.0"),
+        .package(
+            url: "https://github.com/nixberg/blobby-swift",
+            .upToNextMinor(from: "0.2.0")),
     ],
     targets: [
         .target(
