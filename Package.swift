@@ -1,4 +1,4 @@
-// swift-tools-version:5.9
+// swift-tools-version: 6.2
 
 import PackageDescription
 
@@ -7,16 +7,26 @@ let package = Package(
     products: [
         .library(
             name: "SHA1",
-            targets: ["SHA1"]),
+            targets: ["SHA1"])
     ],
     dependencies: [
         .package(
             url: "https://github.com/nixberg/blobby-swift",
             .upToNextMinor(from: "0.2.0")),
+        .package(
+            url: "https://github.com/nixberg/crypto-swift",
+            branch: "main"),
     ],
     targets: [
         .target(
-            name: "SHA1"),
+            name: "SHA1",
+            dependencies: [
+                .product(name: "CryptoExtras", package: "crypto-swift")
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("Lifetimes"),
+                .strictMemorySafety(),
+            ]),
         .testTarget(
             name: "SHA1Tests",
             dependencies: [
@@ -24,7 +34,7 @@ let package = Package(
                 "SHA1",
             ],
             resources: [
-                .embedInCode("sha1.blb"),
+                .embedInCode("sha1.blb")
             ]),
     ]
 )

@@ -1,57 +1,54 @@
-public struct SHA1: ~Copyable {
+import CryptoExtras
+
+public typealias SHA1 = CoreWrapper<InlineByteBuffer<64>, SHA1Core>
+
+public struct SHA1Core: ~Copyable, InitCore, FixedSizeOutputCore, UpdateCore {
+    public static let blockByteCount = 64
+
+    public static let outputByteCount = 20
+
     private var state = State()
-    
-    private var buffer: Buffer = []
-    private var digestedBitsCount: UInt64 = 0
-    
-    public init() {
-        buffer.reserveCapacity(320)
+
+    private var messageByteCount = 0
+
+    public init() {}
+
+    public mutating func update(withBlock block: borrowing RawSpan) {
+        precondition(block.byteCount == Self.blockByteCount, "TODO")
+        state.compress(block)
+        messageByteCount += Self.blockByteCount
     }
-    
-    public mutating func append(_ newElement: UInt8) {
-        buffer.append(newElement)
-        digestedBitsCount += 8
-        
-        if buffer.count == 64 {
-            state.compress(&buffer)
-            buffer.removeAll(keepingCapacity: true)
-        }
-    }
-    
-    public mutating func append(contentsOf newElements: some Sequence<UInt8>) {
-        for newElement in newElements {
-            self.append(newElement)
-        }
-    }
-    
-    public consuming func finalized() -> Digest {
-        self.finalize()
-        return Digest(state: (consume self).state)
-    }
-    
-    // Workaround for "Overlapping accesses to 'self'"
-    private mutating func finalize() {
+
+    public mutating func finalize<Buffer>(
+        withBuffer buffer: inout Buffer,
+        into output: inout MutableRawSpan
+    ) where Buffer: ~Copyable & ByteBufferProtocol {
+        precondition(Buffer._capacity == Self.blockByteCount, "TODO")
+        precondition(output.byteCount == Self.outputByteCount, "TODO")
+
+        messageByteCount += buffer.count
         buffer.append(0x80)
-        
+
         if buffer.count > 56 {
-            buffer.fill(with: 0, toCount: 64)
-            state.compress(&buffer)
-            buffer.removeAll(keepingCapacity: true)
+            buffer.pad()
+            state.compress(buffer.bytes)
+            buffer.removeAll()
         }
-        
-        buffer.fill(with: 0, toCount: 56)
-        withUnsafeBytes(of: digestedBitsCount.bigEndian) {
-            buffer.append(contentsOf: $0)
-        }
-        
-        state.compress(&buffer)
+
+        buffer.pad(toCount: 56)
+        buffer.append(contentsOf: UInt64(messageByteCount * 8).bigEndian.bytes)
+        state.compress(buffer.bytes)
+
+        state.storeBytes(into: &output)
     }
 }
 
-extension SHA1 {
-    public static func hash(contentsOf elements: some Sequence<UInt8>) -> Digest {
-        var hashFunction = Self()
-        hashFunction.append(contentsOf: elements)
-        return hashFunction.finalized()
+extension UInt64 {
+    fileprivate var bytes: RawSpan {
+        @_lifetime(borrow self)
+        _read {
+            let result: [1 of Self] = [self]
+            yield result.span.bytes
+        }
     }
 }

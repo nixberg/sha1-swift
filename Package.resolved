@@ -1,4 +1,5 @@
 {
+  "originHash" : "ff368307e4c676efe7cfa3b346554ea5f8c416c2e9bfa7e8d810f3e02208283a",
   "pins" : [
     {
       "identity" : "blobby-swift",
@@ -10,12 +11,21 @@
       }
     },
     {
+      "identity" : "crypto-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nixberg/crypto-swift",
+      "state" : {
+        "branch" : "main",
+        "revision" : "e3535c7884ef39e27e690e8ce154502890435196"
+      }
+    },
+    {
       "identity" : "swift-collections",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections",
       "state" : {
-        "revision" : "a902f1823a7ff3c9ab2fba0f992396b948eda307",
-        "version" : "1.0.5"
+        "revision" : "8c0c0a8b49e080e54e5e328cc552821ff07cd341",
+        "version" : "1.2.1"
       }
     },
     {
@@ -28,5 +38,5 @@
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }
